@@ -67,4 +67,11 @@ def process_files(ds_names=None):
             print(e)
             pass
         finally:
-            
+            print(f'Processing Error in {ds_name}')
+
+if __name__ == '__main__':
+    if len(sys.argv == 2):
+        ds_name = json.loads(sys.argv[1])
+        process_files(ds_names)
+    else:
+        process_files()
