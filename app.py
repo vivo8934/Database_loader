@@ -30,7 +30,8 @@ def to_sql(df,db_conn_uri,ds_name):
         ds_name,
         db_conn_uri,
         if_exists='append',
-        index=True
+        index=True,
+        method='multi'
     )
 
 def db_loader(src_base_dir,db_conn_uri,ds_name):
@@ -41,9 +42,25 @@ def db_loader(src_base_dir,db_conn_uri,ds_name):
     
     for file in files:
         df_reader = read_csv(file,schemas)
-        for idx, df in enumarate(df_reader):
+        for idx, df in enumerate(df_reader):
             print(f'Populating chunk {idx} of {ds_name}')
             to_sql(df,db_conn_uri,ds_name)
+
+def process_dataset(args):
+    src_base_dir = args[0]
+    db_conn_uri = args[1]
+    ds_name = args[2]
+    try:
+        print(f'Processing {ds_name}')
+        db_loader(src_base_dir,db_conn_uri,ds_name)
+    except NameError as ne:
+         print(ne)
+         pass
+    except Exception as e:
+         print(e)
+         pass
+    finally:
+         print(f'Processing Error in {ds_name}')
 
 def process_files(ds_names=None):
     src_base_dir = os.environ.get('SRC_BASE_DIR')
@@ -54,24 +71,10 @@ def process_files(ds_names=None):
     db_pass = os.environ.get('DB_PASS')
     db_conn_uri = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}'
     schemas = json.load(open(f'{src_base_dir}/schemas.json'))
-    if not ds_name:
+    if not ds_names:
         ds_names = schemas.keys()
     for ds_name in ds_names:
-        try:
-            print(f'Processing {ds_name}')
-            db_loader(src_base_dir,db_conn_uri,ds_name)
-        except NameError as ne:
-            print(ne)
-            pass
-        except Exception as e:
-            print(e)
-            pass
-        finally:
-            print(f'Processing Error in {ds_name}')
-
+        process_dataset((src_base_dir,db_conn_uri,db_name))
+            
 if __name__ == '__main__':
-    if len(sys.argv == 2):
-        ds_name = json.loads(sys.argv[1])
-        process_files(ds_names)
-    else:
         process_files()
